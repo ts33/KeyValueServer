@@ -1,0 +1,31 @@
+{
+  "name": "key_value_server",
+  "version": "1.0.0",
+  "description": "a simple http server that stores and retrieves key value information",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "node_modules/.bin/mocha -u tdd ./test/*_test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ts33/KeyValueServer.git"
+  },
+  "keywords": [
+    "key value server"
+  ],
+  "author": "ts33",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ts33/KeyValueServer/issues"
+  },
+  "homepage": "https://github.com/ts33/KeyValueServer#readme",
+  "dependencies": {
+    "check-types": "7.3.0",
+    "express": "4.15.4"
+  },
+  "devDependencies": {
+    "mocha": "3.5.3",
+    "eslint": "4.7.2"
+  }
+}
