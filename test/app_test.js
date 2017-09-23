@@ -1,415 +1,443 @@
-var async = require('async')
-var sleep = require('sleep')
-var chai = require('chai')
-var assert = chai.assert
-var store = require('../store.js')
-var utils = require('./utils.js')
+let async = require('async');
+let sleep = require('sleep');
+let chai = require('chai');
+let assert = chai.assert;
+let store = require('../store.js');
+let utils = require('./utils.js');
 
 
-const obj_url = utils.base_url + '/object'
+const objUrl = utils.baseUrl + '/object';
 
 
 suite('/object Post', function() {
-
   suite('Valid inputs', function() {
-
     setup(function(done) {
-      utils.reset_db(done)
-    })
+      utils.resetDb(done);
+    });
 
     test('should accept and return string `value`', function(done) {
-      key = 'a_bc'
-      value = 'some_value'
-      data = { 'key': key, 'value': value }
-      ts = Date.now()
+      key = 'a_bc';
+      value = 'some_value';
+      data = {'key': key, 'value': value};
+      ts = Date.now();
 
-      function validate(res, parsedBody){
-        assert.equal(res.statusCode, 200)
-        assert.equal(parsedBody['key'], key)
-        assert.equal(parsedBody['value'], value)
+      function validate(res, parsedBody) {
+        assert.equal(res.statusCode, 200);
+        assert.equal(parsedBody['key'], key);
+        assert.equal(parsedBody['value'], value);
 
-        diff = parsedBody['timestamp'] - ts
-        assert.isBelow(diff, 1000)
+        diff = parsedBody['timestamp'] - ts;
+        assert.isBelow(diff, 1000);
       }
 
-      req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
-      utils.send_post(req, validate, done)
-    })
+      req = utils.preparePost(objUrl, JSON.stringify(data), 'application/json');
+      utils.sendPost(req, validate, done);
+    });
 
     test('should accept and return JSON `value`', function(done) {
-      key = 'abc'
-      value = { 'inner_key':'def', 'inner_value':123 }
-      data = { 'key': key, 'value': value }
-      ts = Date.now()
+      key = 'abc';
+      value = {'inner_key': 'def', 'inner_value': 123};
+      data = {'key': key, 'value': value};
+      ts = Date.now();
 
-      function validate(res, parsedBody){
-        assert.equal(res.statusCode, 200)
-        assert.equal(parsedBody['key'], key)
-        assert.deepEqual(parsedBody['value'], value)
+      function validate(res, parsedBody) {
+        assert.equal(res.statusCode, 200);
+        assert.equal(parsedBody['key'], key);
+        assert.deepEqual(parsedBody['value'], value);
 
-        diff = parsedBody['timestamp'] - ts
-        assert.isBelow(diff, 1000)
+        diff = parsedBody['timestamp'] - ts;
+        assert.isBelow(diff, 1000);
       }
 
-      req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
-      utils.send_post(req, validate, done)
-    })
+      req = utils.preparePost(objUrl, JSON.stringify(data), 'application/json');
+      utils.sendPost(req, validate, done);
+    });
+  });
 
-  })
-
-  suite('Invalid inputs', function(){
-
+  suite('Invalid inputs', function() {
     setup(function(done) {
-      utils.reset_db(done)
-    })
+      utils.resetDb(done);
+    });
 
     test('should return error if data is not JSON', function(done) {
-      data = '123'
+      data = '123';
 
-      function validate(res, parsedBody){
-        assert.equal(res.statusCode, 400)
-        assert.deepEqual(parsedBody, store.invalid_save_message)
+      function validate(res, parsedBody) {
+        assert.equal(res.statusCode, 400);
+        assert.deepEqual(parsedBody, store.invalidSaveMessage);
       }
 
-      req = utils.prepare_post(obj_url, data, 'plain/text')
-      utils.send_post(req, validate, done)
-    })
+      req = utils.preparePost(objUrl, data, 'plain/text');
+      utils.sendPost(req, validate, done);
+    });
 
     test('should return error if key is empty string', function(done) {
-      key = ''
-      value = 'some_value'
-      data = { 'key': key, 'value': value }
+      key = '';
+      value = 'some_value';
+      data = {'key': key, 'value': value};
 
-      function validate(res, parsedBody){
-        assert.equal(res.statusCode, 400)
-        assert.deepEqual(parsedBody, store.invalid_save_message)
+      function validate(res, parsedBody) {
+        assert.equal(res.statusCode, 400);
+        assert.deepEqual(parsedBody, store.invalidSaveMessage);
       }
 
-      req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
-      utils.send_post(req, validate, done)
-    })
+      req = utils.preparePost(objUrl, JSON.stringify(data), 'application/json');
+      utils.sendPost(req, validate, done);
+    });
 
     test('should return error if value is not string/JSON', function(done) {
-      key = 'abc'
-      value = 123
-      data = { 'key': key, 'value': value }
+      key = 'abc';
+      value = 123;
+      data = {'key': key, 'value': value};
 
-      function validate(res, parsedBody){
-        assert.equal(res.statusCode, 400)
-        assert.deepEqual(parsedBody, store.invalid_save_message)
+      function validate(res, parsedBody) {
+        assert.equal(res.statusCode, 400);
+        assert.deepEqual(parsedBody, store.invalidSaveMessage);
       }
 
-      req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
-      utils.send_post(req, validate, done)
-    })
+      req = utils.preparePost(objUrl, JSON.stringify(data), 'application/json');
+      utils.sendPost(req, validate, done);
+    });
 
     test('should return error if key is not string', function(done) {
-      key = 123
-      value = 'some_value'
-      data = { 'key': key, 'value': value }
+      key = 123;
+      value = 'some_value';
+      data = {'key': key, 'value': value};
 
-      function validate(res, parsedBody){
-        assert.equal(res.statusCode, 400)
-        assert.deepEqual(parsedBody, store.invalid_save_message)
+      function validate(res, parsedBody) {
+        assert.equal(res.statusCode, 400);
+        assert.deepEqual(parsedBody, store.invalidSaveMessage);
       }
 
-      req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
-      utils.send_post(req, validate, done)
-    })
+      req = utils.preparePost(objUrl, JSON.stringify(data), 'application/json');
+      utils.sendPost(req, validate, done);
+    });
 
     test('should return error if key has characters that are not alphanumeric or _', function(done) {
-      value = 'some_value'
-      data1 = { 'key': 'ab-', 'value': value }
-      data2 = { 'key': 'ab.', 'value': value }
-      data3 = { 'key': 'ab@', 'value': value }
+      value = 'some_value';
+      data1 = {'key': 'ab-', 'value': value};
+      data2 = {'key': 'ab.', 'value': value};
+      data3 = {'key': 'ab@', 'value': value};
 
-      function validate(res, parsedBody){
-        assert.equal(res.statusCode, 400)
-        assert.deepEqual(parsedBody, store.invalid_save_message)
+      function validate(res, parsedBody) {
+        assert.equal(res.statusCode, 400);
+        assert.deepEqual(parsedBody, store.invalidSaveMessage);
       }
 
-      req1 = utils.prepare_post(obj_url, JSON.stringify(data1), 'application/json')
-      req2 = utils.prepare_post(obj_url, JSON.stringify(data2), 'application/json')
-      req3 = utils.prepare_post(obj_url, JSON.stringify(data3), 'application/json')
+      req1 = utils.preparePost(objUrl, JSON.stringify(data1), 'application/json');
+      req2 = utils.preparePost(objUrl, JSON.stringify(data2), 'application/json');
+      req3 = utils.preparePost(objUrl, JSON.stringify(data3), 'application/json');
 
       async.series([
-        function(callback) { utils.send_post(req1, validate, callback) },
-        function(callback) { utils.send_post(req2, validate, callback) },
-        function(callback) { utils.send_post(req3, validate, done) },
-      ])
-    })
-
-  })
-
-})
+        function(callback) {
+          utils.sendPost(req1, validate, callback);
+        },
+        function(callback) {
+          utils.sendPost(req2, validate, callback);
+        },
+        function(callback) {
+          utils.sendPost(req3, validate, done);
+        },
+      ]);
+    });
+  });
+});
 
 
 suite('/object/:key Get', function() {
-
   suite('Valid inputs', function() {
-
     setup(function(done) {
-      utils.reset_db(done)
-    })
+      utils.resetDb(done);
+    });
 
     test('should accept string `key` and return string `value`', function(done) {
-      key = 'abc'
-      value = 'some_value'
-      data = { 'key': key, 'value': value }
-      expected = { 'value': value }
+      key = 'abc';
+      value = 'some_value';
+      data = {'key': key, 'value': value};
+      expected = {'value': value};
 
-      function validate(res, parsedBody){
-        assert.equal(res.statusCode, 200)
-        assert.deepEqual(parsedBody, expected)
+      function validate(res, parsedBody) {
+        assert.equal(res.statusCode, 200);
+        assert.deepEqual(parsedBody, expected);
       }
 
-      req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
-      utils.send_post(req, utils.noop, function(){
-        utils.send_get(obj_url + `/${key}`, validate, done)
-      })
-    })
+      req = utils.preparePost(objUrl, JSON.stringify(data), 'application/json');
+      utils.sendPost(req, utils.noop, function() {
+        utils.sendGet(objUrl + `/${key}`, validate, done);
+      });
+    });
 
     test('should accept string `key` and return JSON `value`', function(done) {
-      key = 'abc'
-      value = {'inner_key':'def', 'inner_value':123}
-      data = { 'key': key, 'value': value }
-      expected = { 'value': value }
+      key = 'abc';
+      value = {'inner_key': 'def', 'inner_value': 123};
+      data = {'key': key, 'value': value};
+      expected = {'value': value};
 
-      function validate(res, parsedBody){
-        assert.equal(res.statusCode, 200)
-        assert.deepEqual(parsedBody, expected)
+      function validate(res, parsedBody) {
+        assert.equal(res.statusCode, 200);
+        assert.deepEqual(parsedBody, expected);
       }
 
-      req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
-      utils.send_post(req, utils.noop, function(){
-        utils.send_get(obj_url + `/${key}`, validate, done)
-      })
-    })
+      req = utils.preparePost(objUrl, JSON.stringify(data), 'application/json');
+      utils.sendPost(req, utils.noop, function() {
+        utils.sendGet(objUrl + `/${key}`, validate, done);
+      });
+    });
+  });
 
-  })
-
-  suite('Invalid inputs', function(){
-
+  suite('Invalid inputs', function() {
     setup(function(done) {
-      utils.reset_db(done)
-    })
+      utils.resetDb(done);
+    });
 
     test('should return error if key is not valid', function(done) {
-      key = 'abc'
-      value = 'some_value'
-      data = { 'key': key, 'value': value }
-      expected = store.not_found_get_message
+      key = 'abc';
+      value = 'some_value';
+      data = {'key': key, 'value': value};
+      expected = store.notFoundGetMessage;
 
-      function validate(res, parsedBody){
-        assert.equal(res.statusCode, 400)
-        assert.deepEqual(parsedBody, expected)
+      function validate(res, parsedBody) {
+        assert.equal(res.statusCode, 400);
+        assert.deepEqual(parsedBody, expected);
       }
 
-      req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
-      utils.send_post(req, utils.noop, function(){
-        utils.send_get(obj_url + '/123', validate, done)
-      })
-    })
+      req = utils.preparePost(objUrl, JSON.stringify(data), 'application/json');
+      utils.sendPost(req, utils.noop, function() {
+        utils.sendGet(objUrl + '/123', validate, done);
+      });
+    });
 
     test('should return error if key has characters that are not alphanumeric or _', function(done) {
-      key = 'abc'
-      value = 'some_value'
-      data = { 'key': key, 'value': value }
-      expected = store.invalid_get_message
+      key = 'abc';
+      value = 'some_value';
+      data = {'key': key, 'value': value};
+      expected = store.invalidGetMessage;
 
-      function validate(res, parsedBody){
-        assert.equal(res.statusCode, 400)
-        assert.deepEqual(parsedBody, expected)
+      function validate(res, parsedBody) {
+        assert.equal(res.statusCode, 400);
+        assert.deepEqual(parsedBody, expected);
       }
 
-      req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
+      req = utils.preparePost(objUrl, JSON.stringify(data), 'application/json');
 
       async.series([
-        function(callback) { utils.send_post(req, utils.noop, callback) },
-        function(callback) { utils.send_get(obj_url + '/ab-', validate, callback) },
-        function(callback) { utils.send_get(obj_url + '/ab.', validate, callback) },
-        function(callback) { utils.send_get(obj_url + '/ab@', validate, done) },
-      ])
-    })
+        function(callback) {
+          utils.sendPost(req, utils.noop, callback);
+        },
+        function(callback) {
+          utils.sendGet(objUrl + '/ab-', validate, callback);
+        },
+        function(callback) {
+          utils.sendGet(objUrl + '/ab.', validate, callback);
+        },
+        function(callback) {
+          utils.sendGet(objUrl + '/ab@', validate, done);
+        },
+      ]);
+    });
 
     test('should return error if timestamp is not int', function(done) {
-      key = 'abc'
-      value = 'some_value'
-      data = { 'key': key, 'value': value }
-      expected = store.invalid_get_message
+      key = 'abc';
+      value = 'some_value';
+      data = {'key': key, 'value': value};
+      expected = store.invalidGetMessage;
 
-      function validate(res, parsedBody){
-        assert.equal(res.statusCode, 400)
-        assert.deepEqual(parsedBody, expected)
+      function validate(res, parsedBody) {
+        assert.equal(res.statusCode, 400);
+        assert.deepEqual(parsedBody, expected);
       }
 
-      req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
-      utils.send_post(req, utils.noop, function(){
-        utils.send_get(obj_url + `/${key}?timestamp=timestamp`, validate, done)
-      })
-    })
+      req = utils.preparePost(objUrl, JSON.stringify(data), 'application/json');
+      utils.sendPost(req, utils.noop, function() {
+        utils.sendGet(objUrl + `/${key}?timestamp=timestamp`, validate, done);
+      });
+    });
 
     test('should return error if timestamp is negative or zero', function(done) {
-      key = 'abc'
-      value = 'some_value'
-      data = { 'key': key, 'value': value }
-      expected = store.invalid_get_message
+      key = 'abc';
+      value = 'some_value';
+      data = {'key': key, 'value': value};
+      expected = store.invalidGetMessage;
 
-      function validate(res, parsedBody){
-        assert.equal(res.statusCode, 400)
-        assert.deepEqual(parsedBody, expected)
+      function validate(res, parsedBody) {
+        assert.equal(res.statusCode, 400);
+        assert.deepEqual(parsedBody, expected);
       }
 
-      req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
+      req = utils.preparePost(objUrl, JSON.stringify(data), 'application/json');
 
       async.series([
-        function(callback) { utils.send_post(req, utils.noop, callback) },
-        function(callback) { utils.send_get(obj_url + `/${key}?timestamp=-100`, validate, callback) },
-        function(callback) { utils.send_get(obj_url + `/${key}?timestamp=0`, validate, done) }
-      ])
-    })
-
-  })
-
-})
+        function(callback) {
+          utils.sendPost(req, utils.noop, callback);
+        },
+        function(callback) {
+          utils.sendGet(objUrl + `/${key}?timestamp=-100`, validate, callback);
+        },
+        function(callback) {
+          utils.sendGet(objUrl + `/${key}?timestamp=0`, validate, done);
+        },
+      ]);
+    });
+  });
+});
 
 
 suite('/reset Get', function() {
-
   test('should empty all records', function(done) {
-    key = 'abc'
-    value = 'some_value'
-    data = { 'key': key, 'value': value }
-    expected = store.not_found_get_message
+    key = 'abc';
+    value = 'some_value';
+    data = {'key': key, 'value': value};
+    expected = store.notFoundGetMessage;
 
-    function validate(res, parsedBody){
-      assert.equal(res.statusCode, 400)
-      assert.deepEqual(parsedBody, expected)
+    function validate(res, parsedBody) {
+      assert.equal(res.statusCode, 400);
+      assert.deepEqual(parsedBody, expected);
     }
 
-    req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
+    req = utils.preparePost(objUrl, JSON.stringify(data), 'application/json');
 
     async.series([
-      function(callback) { utils.send_post(req, utils.noop, callback) },
-      function(callback) { utils.reset_db(callback) },
-      function(callback) { utils.send_get(obj_url + `/${key}`, validate, done) }
-    ])
-  })
-
-})
+      function(callback) {
+        utils.sendPost(req, utils.noop, callback);
+      },
+      function(callback) {
+        utils.resetDb(callback);
+      },
+      function(callback) {
+        utils.sendGet(objUrl + `/${key}`, validate, done);
+      },
+    ]);
+  });
+});
 
 
 suite('/object/:key Advanced Get', function() {
-
   setup(function(done) {
-    utils.reset_db(done)
-  })
+    utils.resetDb(done);
+  });
 
   test('should return correct value', function(done) {
-    key = 'abc'
-    value = 'some_value'
-    data = { 'key': key, 'value': value }
-    expected = { 'value': value }
+    key = 'abc';
+    value = 'some_value';
+    data = {'key': key, 'value': value};
+    expected = {'value': value};
 
-    key2 = 'def'
-    value2 = 'another_value'
-    data2 = { 'key': key2, 'value': value2 }
+    key2 = 'def';
+    value2 = 'another_value';
+    data2 = {'key': key2, 'value': value2};
 
-    function validate(res, parsedBody){
-      assert.equal(res.statusCode, 200)
-      assert.deepEqual(parsedBody, expected)
+    function validate(res, parsedBody) {
+      assert.equal(res.statusCode, 200);
+      assert.deepEqual(parsedBody, expected);
     }
 
-    req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
-    req2 = utils.prepare_post(obj_url, JSON.stringify(data2), 'application/json')
+    req = utils.preparePost(objUrl, JSON.stringify(data), 'application/json');
+    req2 = utils.preparePost(objUrl, JSON.stringify(data2), 'application/json');
 
     async.series([
-      function(callback) { utils.send_post(req, utils.noop, callback) },
-      function(callback) { utils.send_post(req2, utils.noop, callback) },
-      function(callback) { utils.send_get(obj_url + `/${key}`, validate, done) }
-    ])
-  })
+      function(callback) {
+        utils.sendPost(req, utils.noop, callback);
+      },
+      function(callback) {
+        utils.sendPost(req2, utils.noop, callback);
+      },
+      function(callback) {
+        utils.sendGet(objUrl + `/${key}`, validate, done);
+      },
+    ]);
+  });
 
   test('should return updated value', function(done) {
-    key = 'abc'
-    value = 'some_value'
-    data = { 'key': key, 'value': value }
+    key = 'abc';
+    value = 'some_value';
+    data = {'key': key, 'value': value};
 
-    value2 = 'another_value'
-    data2 = { 'key': key, 'value': value2 }
+    value2 = 'another_value';
+    data2 = {'key': key, 'value': value2};
 
-    expected = { 'value': value2 }
-    function validate(res, parsedBody){
-      assert.equal(res.statusCode, 200)
-      assert.deepEqual(parsedBody, expected)
+    expected = {'value': value2};
+    function validate(res, parsedBody) {
+      assert.equal(res.statusCode, 200);
+      assert.deepEqual(parsedBody, expected);
     }
 
-    req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
-    req2 = utils.prepare_post(obj_url, JSON.stringify(data2), 'application/json')
+    req = utils.preparePost(objUrl, JSON.stringify(data), 'application/json');
+    req2 = utils.preparePost(objUrl, JSON.stringify(data2), 'application/json');
 
     async.series([
-      function(callback) { utils.send_post(req, utils.noop, callback) },
-      function(callback) { utils.send_post(req2, utils.noop, callback) },
-      function(callback) { utils.send_get(obj_url + `/${key}`, validate, done) }
-    ])
-  })
+      function(callback) {
+        utils.sendPost(req, utils.noop, callback);
+      },
+      function(callback) {
+        utils.sendPost(req2, utils.noop, callback);
+      },
+      function(callback) {
+        utils.sendGet(objUrl + `/${key}`, validate, done);
+      },
+    ]);
+  });
 
   test('should return values according to timestamp', function(done) {
-    key = 'abc'
-    value = 'first_value'
-    value1 = 'second_value'
-    value2 = 'third_value'
-    data = { 'key': key, 'value': value }
-    data1 = { 'key': key, 'value': value1 }
-    data2 = { 'key': key, 'value': value2 }
+    key = 'abc';
+    value = 'first_value';
+    value1 = 'second_value';
+    value2 = 'third_value';
+    data = {'key': key, 'value': value};
+    data1 = {'key': key, 'value': value1};
+    data2 = {'key': key, 'value': value2};
 
-    function validate1(res, parsedBody){
-      assert.equal(res.statusCode, 400)
-      assert.deepEqual(parsedBody, store.not_found_get_message)
+    function validate1(res, parsedBody) {
+      assert.equal(res.statusCode, 400);
+      assert.deepEqual(parsedBody, store.notFoundGetMessage);
     }
-    function validate2(res, parsedBody){
-      assert.equal(res.statusCode, 200)
-      assert.deepEqual(parsedBody, { 'value': value })
+    function validate2(res, parsedBody) {
+      assert.equal(res.statusCode, 200);
+      assert.deepEqual(parsedBody, {'value': value});
     }
-    function validate3(res, parsedBody){
-      assert.equal(res.statusCode, 200)
-      assert.deepEqual(parsedBody, { 'value': value1 })
+    function validate3(res, parsedBody) {
+      assert.equal(res.statusCode, 200);
+      assert.deepEqual(parsedBody, {'value': value1});
     }
-    function validate4(res, parsedBody){
-      assert.equal(res.statusCode, 200)
-      assert.deepEqual(parsedBody, { 'value': value2 })
+    function validate4(res, parsedBody) {
+      assert.equal(res.statusCode, 200);
+      assert.deepEqual(parsedBody, {'value': value2});
     }
 
-    req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
-    req1 = utils.prepare_post(obj_url, JSON.stringify(data1), 'application/json')
-    req2 = utils.prepare_post(obj_url, JSON.stringify(data2), 'application/json')
+    req = utils.preparePost(objUrl, JSON.stringify(data), 'application/json');
+    req1 = utils.preparePost(objUrl, JSON.stringify(data1), 'application/json');
+    req2 = utils.preparePost(objUrl, JSON.stringify(data2), 'application/json');
 
     async.series([
       function(callback) {
-        utils.send_post(req, utils.noop, callback)
+        utils.sendPost(req, utils.noop, callback);
       },
       function(callback) {
-        first_save = Date.now()
-        sleep.sleep(1)
-        utils.send_post(req1, utils.noop, callback)
+        firstSave = Date.now();
+        sleep.sleep(1);
+        utils.sendPost(req1, utils.noop, callback);
       },
       function(callback) {
-        second_save = Date.now()
-        sleep.sleep(1)
-        utils.send_post(req2, utils.noop, callback)
+        secondSave = Date.now();
+        sleep.sleep(1);
+        utils.sendPost(req2, utils.noop, callback);
       },
       function(callback) {
-        third_save = Date.now()
+        thirdSave = Date.now();
         // when specifying with a timestamp before the first call, a null value is returned
-        utils.send_get(obj_url + `/${key}?timestamp=${first_save-500}`, validate1, callback)
+        utils.sendGet(objUrl + `/${key}?timestamp=${firstSave-500}`, validate1, callback);
       },
       // when specifying with a timestamp between the first two calls, the first result is returned
-      function(callback) { utils.send_get(obj_url + `/${key}?timestamp=${first_save+500}`, validate2, callback) },
+      function(callback) {
+        utils.sendGet(objUrl + `/${key}?timestamp=${firstSave+500}`, validate2, callback);
+      },
       // when specifying with a timestamp between 2nd and 3rd call, the second result is returned
-      function(callback) { utils.send_get(obj_url + `/${key}?timestamp=${second_save+500}`, validate3, callback) },
+      function(callback) {
+        utils.sendGet(objUrl + `/${key}?timestamp=${secondSave+500}`, validate3, callback);
+      },
       // when specifying with a timestamp after the third call, the second result is returned
-      function(callback) { utils.send_get(obj_url + `/${key}?timestamp=${third_save+500}`, validate4, done) },
-    ])
-  })
-
-})
+      function(callback) {
+        utils.sendGet(objUrl + `/${key}?timestamp=${thirdSave+500}`, validate4, done);
+      },
+    ]);
+  });
+});
