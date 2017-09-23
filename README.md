@@ -66,5 +66,5 @@ Response: {"value": value1 } // still return value 1 , because value 2 was only 
 - npm install
 - npm start
 - DATABASE_URL={postgres_connection_string} URL=http://localhost:3000 npm test
-- DATABASE_URL={postgres_connection_string} URL=http://localhost:3000 npm run-script test-integration
+- URL=http://localhost:3000 npm run-script test-integration
 - npm run-script report
