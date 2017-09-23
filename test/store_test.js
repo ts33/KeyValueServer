@@ -49,21 +49,21 @@ suite('Save', function() {
       key = ''
       value = 'some_value'
       expected = store.invalid_save_message
-      assert.equal(store.save(key, value), expected);
+      assert.deepEqual(store.save(key, value), expected);
     });
 
     test('should return error if value is not string/JSON', function() {
       key = 'abc'
       value = 123
       expected = store.invalid_save_message
-      assert.equal(store.save(key, value), expected);
+      assert.deepEqual(store.save(key, value), expected);
     });
 
     test('should return error if key is not string', function() {
       key = 123
       value = 'some_value'
       expected = store.invalid_save_message
-      assert.equal(store.save(key, value), expected);
+      assert.deepEqual(store.save(key, value), expected);
     });
 
   });
@@ -71,7 +71,7 @@ suite('Save', function() {
 });
 
 
-suite('Get', function() {
+suite('Read', function() {
 
   suite('Valid inputs', function() {
 
@@ -84,8 +84,8 @@ suite('Get', function() {
       value = 'some_value'
       store.save(key, value)
 
-      expected = { 'value': 'some_value' }
-      assert.deepEqual(store.get('abc', null), expected);
+      expected = { 'value': value }
+      assert.deepEqual(store.read(key, null), expected);
     });
 
     test('should accept string `key` and return JSON `value`', function() {
@@ -93,8 +93,8 @@ suite('Get', function() {
       value = {'inner_key':'def', 'inner_value':123}
       store.save(key, value)
 
-      expected = { 'value': {'inner_key':'def', 'inner_value':123} }
-      assert.deepEqual(store.get('abc', null), expected);
+      expected = { 'value': value }
+      assert.deepEqual(store.read(key, null), expected);
     });
 
   });
@@ -111,7 +111,7 @@ suite('Get', function() {
       store.save(key, value)
 
       expected = store.invalid_get_message
-      assert.equal(store.get(123), expected);
+      assert.deepEqual(store.read(123), expected);
     });
 
     test('should return error if timestamp is not int', function() {
@@ -120,7 +120,7 @@ suite('Get', function() {
       store.save(key, value)
 
       expected = store.invalid_get_message
-      assert.equal(store.get('abc', 'timestamp'), expected);
+      assert.deepEqual(store.read(key, 'timestamp'), expected);
     });
 
     test('should return error if timestamp is negative or zero', function() {
@@ -129,8 +129,8 @@ suite('Get', function() {
       store.save(key, value)
 
       expected = store.invalid_get_message
-      assert.equal(store.get('abc', -100), expected);
-      assert.equal(store.get('abc', 0), expected);
+      assert.deepEqual(store.read(key, -100), expected);
+      assert.deepEqual(store.read(key, 0), expected);
     });
 
   });
@@ -146,13 +146,13 @@ suite('Reset', function() {
       store.save(key, value)
       store.reset()
 
-      assert.deepEqual(store.get('abc', null), null);
+      assert.deepEqual(store.read(key, null), store.not_found_get_message);
     });
 
 });
 
 
-suite('Advanced Get', function() {
+suite('Advanced Read', function() {
 
   setup(function() {
     store.reset()
@@ -163,12 +163,12 @@ suite('Advanced Get', function() {
     value = 'some_value'
     store.save(key, value)
 
-    key = 'def'
-    value = 'another_value'
-    store.save(key, value)
+    key2 = 'def'
+    value2 = 'another_value'
+    store.save(key2, value2)
 
-    expected = { 'value': 'some_value' }
-    assert.deepEqual(store.get('abc', null), expected);
+    expected = { 'value': value }
+    assert.deepEqual(store.read(key, null), expected);
   });
 
   test('should return updated value', function() {
@@ -177,11 +177,11 @@ suite('Advanced Get', function() {
     store.save(key, value)
 
     key = 'abc'
-    value = 'another_value'
-    store.save(key, value)
+    value2 = 'another_value'
+    store.save(key, value2)
 
-    expected = { 'value': 'another_value' }
-    assert.deepEqual(store.get('abc', null), expected);
+    expected = { 'value': value2 }
+    assert.deepEqual(store.read(key, null), expected);
   });
 
   test('should return values according to timestamp', function() {
@@ -193,30 +193,30 @@ suite('Advanced Get', function() {
 
       sleep.sleep(1)
       key = 'abc'
-      value = 'second_value'
-      store.save(key, value)
+      value1 = 'second_value'
+      store.save(key, value1)
       second_save = Date.now()
 
       sleep.sleep(1)
       key = 'abc'
-      value = 'third_value'
-      store.save(key, value)
+      value2 = 'third_value'
+      store.save(key, value2)
       third_save = Date.now()
 
       // when specifying with a timestamp before the first call, a null value is returned
-      assert.deepEqual(store.get('abc', first_save-500), null);
+      assert.deepEqual(store.read(key, first_save-500), store.not_found_get_message);
 
-      expected = { 'value': 'first_value' }
+      expected = { 'value': value }
       // when specifying with a timestamp between the first two calls, the first result is returned
-      assert.deepEqual(store.get('abc', first_save+500), expected);
+      assert.deepEqual(store.read(key, first_save+500), expected);
 
-      expected = { 'value': 'second_value' }
+      expected = { 'value': value1 }
       // when specifying with a timestamp between 2nd and 3rd call, the second result is returned
-      assert.deepEqual(store.get('abc', second_save+500), expected);
+      assert.deepEqual(store.read(key, second_save+500), expected);
 
-      expected = { 'value': 'third_value' }
+      expected = { 'value': value2 }
       // when specifying with a timestamp after the third call, the second result is returned
-      assert.deepEqual(store.get('abc', third_save+500), expected);
+      assert.deepEqual(store.read(key, third_save+500), expected);
   });
 
 });

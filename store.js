@@ -1,9 +1,11 @@
 var check = require('check-types');
 
 
-invalid_save_message = 'input is invalid, please enter only a `key` of type String and a `value` of type String/JSON'
+invalid_save_message = { 'error': 'input is invalid, please enter only a `key` of type String and a `value` of type String/JSON' }
 
-invalid_get_message = 'input is invalid, please enter only a `key` of type String with an optional `timestamp` of type unix timestamp'
+invalid_get_message = { 'error': 'input is invalid, please enter only a `key` of type String with an optional `timestamp` of type unix timestamp' }
+
+not_found_get_message = { 'error': 'no records found. Either this key does not have any records, no records existed with this timestamp'}
 
 var kv_store = {}
 
@@ -63,7 +65,7 @@ function save(key, value){
 
 
 // retrieves value of key, with timestamp as an optional parameter
-function get(key, timestamp){
+function read(key, timestamp){
 
   if (get_inputs_invalid(key, timestamp)){
     return invalid_get_message
@@ -79,7 +81,7 @@ function get(key, timestamp){
     } else {
 
       if (timestamp < records[0]['timestamp']){
-        return null
+        return not_found_get_message
       }
       for (var i = 1; i < records.length; ++i) {
         if (timestamp < records[i]['timestamp']){
@@ -92,7 +94,7 @@ function get(key, timestamp){
     }
   }
 
-  return null
+  return not_found_get_message
 }
 
 
@@ -105,10 +107,12 @@ function reset(){
 
 module.exports.save = save
 
-module.exports.get = get
+module.exports.read = read
 
 module.exports.reset = reset
 
 module.exports.invalid_save_message = invalid_save_message
 
 module.exports.invalid_get_message = invalid_get_message
+
+module.exports.not_found_get_message = not_found_get_message
