@@ -1,3 +1,4 @@
+var async = require('async')
 var sleep = require('sleep')
 var chai = require('chai')
 var assert = chai.assert
@@ -28,7 +29,7 @@ suite('/object Post', function() {
         assert.equal(parsedBody['value'], value)
 
         diff = parsedBody['timestamp'] - ts
-        assert.isBelow(diff, 50)
+        assert.isBelow(diff, 1000)
       }
 
       req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
@@ -47,7 +48,7 @@ suite('/object Post', function() {
         assert.deepEqual(parsedBody['value'], value)
 
         diff = parsedBody['timestamp'] - ts
-        assert.isBelow(diff, 50)
+        assert.isBelow(diff, 1000)
       }
 
       req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
@@ -131,11 +132,11 @@ suite('/object Post', function() {
       req2 = utils.prepare_post(obj_url, JSON.stringify(data2), 'application/json')
       req3 = utils.prepare_post(obj_url, JSON.stringify(data3), 'application/json')
 
-      utils.send_post(req1, validate, function(){
-        utils.send_post(req2, validate, function(){
-          utils.send_post(req3, validate, done)
-        })
-      })
+      async.series([
+        function(callback) { utils.send_post(req1, validate, callback) },
+        function(callback) { utils.send_post(req2, validate, callback) },
+        function(callback) { utils.send_post(req3, validate, done) },
+      ])
     })
 
   })
@@ -222,13 +223,13 @@ suite('/object/:key Get', function() {
       }
 
       req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
-      utils.send_post(req, utils.noop, function(){
-        utils.send_get(obj_url + '/ab-', validate, function(){
-          utils.send_get(obj_url + '/ab.', validate, function(){
-            utils.send_get(obj_url + '/ab@', validate, done)
-          })
-        })
-      })
+
+      async.series([
+        function(callback) { utils.send_post(req, utils.noop, callback) },
+        function(callback) { utils.send_get(obj_url + '/ab-', validate, callback) },
+        function(callback) { utils.send_get(obj_url + '/ab.', validate, callback) },
+        function(callback) { utils.send_get(obj_url + '/ab@', validate, done) },
+      ])
     })
 
     test('should return error if timestamp is not int', function(done) {
@@ -260,11 +261,12 @@ suite('/object/:key Get', function() {
       }
 
       req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
-      utils.send_post(req, utils.noop, function(){
-        utils.send_get(obj_url + `/${key}?timestamp=-100`, validate, function(){
-          utils.send_get(obj_url + `/${key}?timestamp=0`, validate, done)
-        })
-      })
+
+      async.series([
+        function(callback) { utils.send_post(req, utils.noop, callback) },
+        function(callback) { utils.send_get(obj_url + `/${key}?timestamp=-100`, validate, callback) },
+        function(callback) { utils.send_get(obj_url + `/${key}?timestamp=0`, validate, done) }
+      ])
     })
 
   })
@@ -286,11 +288,12 @@ suite('/reset Get', function() {
     }
 
     req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
-    utils.send_post(req, utils.noop, function(){
-      utils.reset_db(function (){
-        utils.send_get(obj_url + `/${key}`, validate, done)
-      })
-    })
+
+    async.series([
+      function(callback) { utils.send_post(req, utils.noop, callback) },
+      function(callback) { utils.reset_db(callback) },
+      function(callback) { utils.send_get(obj_url + `/${key}`, validate, done) }
+    ])
   })
 
 })
@@ -320,14 +323,14 @@ suite('/object/:key Advanced Get', function() {
     req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
     req2 = utils.prepare_post(obj_url, JSON.stringify(data2), 'application/json')
 
-    utils.send_post(req, utils.noop, function(){
-      utils.send_post(req2, utils.noop, function(){
-        utils.send_get(obj_url + `/${key}`, validate, done)
-      })
-    })
+    async.series([
+      function(callback) { utils.send_post(req, utils.noop, callback) },
+      function(callback) { utils.send_post(req2, utils.noop, callback) },
+      function(callback) { utils.send_get(obj_url + `/${key}`, validate, done) }
+    ])
   })
 
-  test('should return updated value', function() {
+  test('should return updated value', function(done) {
     key = 'abc'
     value = 'some_value'
     data = { 'key': key, 'value': value }
@@ -344,15 +347,14 @@ suite('/object/:key Advanced Get', function() {
     req = utils.prepare_post(obj_url, JSON.stringify(data), 'application/json')
     req2 = utils.prepare_post(obj_url, JSON.stringify(data2), 'application/json')
 
-    utils.send_post(req, utils.noop, function(){
-      utils.send_post(req2, utils.noop, function(){
-        utils.send_get(obj_url + `/${key}`, validate, done)
-      })
-    })
+    async.series([
+      function(callback) { utils.send_post(req, utils.noop, callback) },
+      function(callback) { utils.send_post(req2, utils.noop, callback) },
+      function(callback) { utils.send_get(obj_url + `/${key}`, validate, done) }
+    ])
   })
 
-  test('should return values according to timestamp', function() {
-    this.timeout(3000)
+  test('should return values according to timestamp', function(done) {
     key = 'abc'
     value = 'first_value'
     value1 = 'second_value'
@@ -382,31 +384,32 @@ suite('/object/:key Advanced Get', function() {
     req1 = utils.prepare_post(obj_url, JSON.stringify(data1), 'application/json')
     req2 = utils.prepare_post(obj_url, JSON.stringify(data2), 'application/json')
 
-    utils.send_post(req, utils.noop, function(){
-      first_save = Date.now()
-      sleep.sleep(1)
-
-      utils.send_post(req1, utils.noop, function(){
+    async.series([
+      function(callback) {
+        utils.send_post(req, utils.noop, callback)
+      },
+      function(callback) {
+        first_save = Date.now()
+        sleep.sleep(1)
+        utils.send_post(req1, utils.noop, callback)
+      },
+      function(callback) {
         second_save = Date.now()
         sleep.sleep(1)
-
-        utils.send_post(req2, utils.noop, function(){
-          third_save = Date.now()
-
-          // when specifying with a timestamp before the first call, a null value is returned
-          utils.send_get(obj_url + `/${key}?timestamp=${first_save-500}`, validate1, function(){
-            // when specifying with a timestamp between the first two calls, the first result is returned
-            utils.send_get(obj_url + `/${key}?timestamp=${first_save+500}`, validate2, function(){
-              // when specifying with a timestamp between 2nd and 3rd call, the second result is returned
-              utils.send_get(obj_url + `/${key}?timestamp=${second_save+500}`, validate3, function(){
-                // when specifying with a timestamp after the third call, the second result is returned
-                utils.send_get(obj_url + `/${key}?timestamp=${third_save+500}`, validate4, done)
-              })
-            })
-          })
-        })
-      })
-    })
+        utils.send_post(req2, utils.noop, callback)
+      },
+      function(callback) {
+        third_save = Date.now()
+        // when specifying with a timestamp before the first call, a null value is returned
+        utils.send_get(obj_url + `/${key}?timestamp=${first_save-500}`, validate1, callback)
+      },
+      // when specifying with a timestamp between the first two calls, the first result is returned
+      function(callback) { utils.send_get(obj_url + `/${key}?timestamp=${first_save+500}`, validate2, callback) },
+      // when specifying with a timestamp between 2nd and 3rd call, the second result is returned
+      function(callback) { utils.send_get(obj_url + `/${key}?timestamp=${second_save+500}`, validate3, callback) },
+      // when specifying with a timestamp after the third call, the second result is returned
+      function(callback) { utils.send_get(obj_url + `/${key}?timestamp=${third_save+500}`, validate4, done) },
+    ])
   })
 
 })
