@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node app.js",
     "test": "node_modules/.bin/mocha -u tdd ./test/*_test.js",
+    "test-integration": "node_modules/.bin/mocha -u tdd ./test_integration/*_test.js",
     "istanbul": "node_modules/.bin/istanbul cover _mocha -- -R spec"
   },
   "repository": {
