@@ -8,23 +8,16 @@ invalidGetMessage = {'error': 'input is invalid, please enter only a `key` of ty
 
 notFoundGetMessage = {'error': 'no records found. Either this key does not have any records, no records existed with this timestamp'};
 
-let kvStore = {};
-
-
-function clone(obj) {
-  return JSON.parse(JSON.stringify(obj));
-}
-
 
 // https://stackoverflow.com/questions/3710204/how-to-check-if-a-string-is-a-valid-json-string-in-javascript-without-using-try
-function tryParseJson(possibleJsonString){
+function tryParseJson(possibleJsonString) {
   try {
-    var o = JSON.parse(possibleJsonString);
+    let o = JSON.parse(possibleJsonString);
     // Handle non-exception-throwing cases:
     // Neither JSON.parse(false) or JSON.parse(1234) throw errors, hence the type-checking,
     // but... JSON.parse(null) returns null, and typeof null === "object",
     // so we must check for that, too. Thankfully, null is falsey, so this suffices:
-    if (o && typeof o === "object") {
+    if (o && typeof o === 'object') {
         return o;
     }
   } catch (e) {
@@ -68,25 +61,23 @@ function getInputsInvalid(key, timestamp) {
 
 // saves key value information with timestamp as a form of version control
 function save(pool, key, value, callback) {
-
   if (saveInputsInvalid(key, value)) {
     callback(invalidSaveMessage);
   } else {
-    if (check.object(value)){
-      value = JSON.stringify(value)
+    if (check.object(value)) {
+      value = JSON.stringify(value);
     }
     pool.query(sqlCommands.addKvRow, [key, value], (err, res) => {
       if (err) {
         console.log(err.stack);
       } else {
-        record = res.rows[0]
+        record = res.rows[0];
         record['timestamp'] = record['timestamp'] * 1000;
         record['value'] = tryParseJson(record['value']);
         callback(record);
       }
     });
   }
-
 }
 
 
@@ -105,9 +96,9 @@ function read(pool, key, timestamp, callback) {
       if (err) {
         console.log(err.stack);
       } else {
-        record = res.rows[0]
+        record = res.rows[0];
         // return error message if no results found
-        if (check.maybe(record) == true){
+        if (check.maybe(record) == true) {
           callback(notFoundGetMessage);
         } else {
           record['value'] = tryParseJson(record['value']);
@@ -116,7 +107,6 @@ function read(pool, key, timestamp, callback) {
       }
     });
   }
-
 }
 
 

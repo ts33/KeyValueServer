@@ -1,21 +1,21 @@
 const express = require('express');
 let check = require('check-types');
 const bodyParser = require('body-parser');
-const { Pool } = require('pg');
+const {Pool} = require('pg');
 let store = require('./store.js');
 let sqlCommands = require('./sql_commands.js');
 
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: true
-})
+  ssl: true,
+});
 
 pool.query(sqlCommands.createKvTable, (err, res) => {
   if (err) {
-    console.log(err.stack)
+    console.log(err.stack);
   }
-})
+});
 
 const port = process.env.PORT || 3000;
 const app = express();
@@ -42,7 +42,7 @@ app.get('/object/:key', function(req, res) {
   if (check.maybe(req.query.timestamp) != true) {
     timestamp = parseInt(req.query.timestamp, 10);
   }
-  store.read(pool, req.params.key, timestamp, function(result){
+  store.read(pool, req.params.key, timestamp, function(result) {
     sendJsonResponse(res, result);
   });
 });
@@ -50,7 +50,7 @@ app.get('/object/:key', function(req, res) {
 
 app.post('/object', function(req, res) {
   console.log(`Received a POST request with key ${req.body['key']}`);
-  store.save(pool, req.body['key'], req.body['value'], function(result){
+  store.save(pool, req.body['key'], req.body['value'], function(result) {
     sendJsonResponse(res, result);
   });
 });
@@ -58,7 +58,7 @@ app.post('/object', function(req, res) {
 
 app.get('/reset', function(req, res) {
   console.log('Received a request to reset database');
-  store.reset(pool, function(){
+  store.reset(pool, function() {
     sendJsonResponse(res, {'message': 'database reset'});
   });
 });
