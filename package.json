@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node app.js",
     "test": "node_modules/.bin/nyc --all node_modules/.bin/mocha -u tdd --timeout 5000 ./test/*_test.js",
-    "test-integration": "node_modules/.bin/mocha -u tdd --timeout 10000 ./test_integration/*_test.js",
+    "test-integration": "node_modules/.bin/mocha -u tdd --timeout 10000 ./test/app_test.js",
     "report": "node_modules/.bin/nyc report --all --reporter=lcov"
   },
   "repository": {
