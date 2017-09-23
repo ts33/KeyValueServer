@@ -1,4 +1,5 @@
 const express = require('express')
+var check = require('check-types')
 const bodyParser = require('body-parser')
 var store = require('./store.js')
 
@@ -24,7 +25,11 @@ function send_json_response(res, result){
 
 app.get('/object/:key', function (req, res) {
   console.log(`Received a GET request on key ${req.params.key}`)
-  result = store.read(req.params.key, req.query.timestamp)
+  timestamp = null
+  if (check.maybe(req.query.timestamp) != true) {
+    timestamp = parseInt(req.query.timestamp, 10)
+  }
+  result = store.read(req.params.key, timestamp)
   send_json_response(res, result)
 })
 
