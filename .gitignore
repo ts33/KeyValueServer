@@ -6,7 +6,7 @@ node_modules/
 
 package-lock.json
 
-# code coverage reports
-coverage/
+# nyc output
+.nyc_output
 
 notes

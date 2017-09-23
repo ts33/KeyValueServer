@@ -64,7 +64,7 @@ Response: {"value": value1 } // still return value 1 , because value 2 was only 
 
 #Commands
 - npm install
-- npm test
 - npm start
+- URL=http://localhost:3000 npm test
 - URL=http://localhost:3000 npm run-script test-integration
-- npm run-script istanbul
+- npm run-script report
