@@ -1,4 +1,5 @@
 let check = require('check-types');
+let sqlCommands = require('./sql_commands.js');
 
 
 invalidSaveMessage = {'error': 'input is invalid, please enter only a `key` of type String (alphanumeric and _ only) and a `value` of type String/JSON'};
@@ -13,6 +14,24 @@ let kvStore = {};
 function clone(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
+
+
+// https://stackoverflow.com/questions/3710204/how-to-check-if-a-string-is-a-valid-json-string-in-javascript-without-using-try
+function tryParseJson(possibleJsonString){
+  try {
+    var o = JSON.parse(possibleJsonString);
+    // Handle non-exception-throwing cases:
+    // Neither JSON.parse(false) or JSON.parse(1234) throw errors, hence the type-checking,
+    // but... JSON.parse(null) returns null, and typeof null === "object",
+    // so we must check for that, too. Thankfully, null is falsey, so this suffices:
+    if (o && typeof o === "object") {
+        return o;
+    }
+  } catch (e) {
+  }
+
+  return possibleJsonString;
+};
 
 
 function saveInputsValid(key, value) {
@@ -48,60 +67,67 @@ function getInputsInvalid(key, timestamp) {
 
 
 // saves key value information with timestamp as a form of version control
-function save(key, value) {
+function save(pool, key, value, callback) {
+
   if (saveInputsInvalid(key, value)) {
-    return invalidSaveMessage;
-  }
-
-  record = {'value': value, 'timestamp': Date.now()};
-
-  if (key in kvStore) {
-    kvStore[key].push(record);
+    callback(invalidSaveMessage);
   } else {
-    kvStore[key] = [record];
+    if (check.object(value)){
+      value = JSON.stringify(value)
+    }
+    pool.query(sqlCommands.addKvRow, [key, value], (err, res) => {
+      if (err) {
+        console.log(err.stack);
+      } else {
+        record = res.rows[0]
+        record['timestamp'] = record['timestamp'] * 1000;
+        record['value'] = tryParseJson(record['value']);
+        callback(record);
+      }
+    });
   }
 
-  resp = clone(record);
-  resp['key'] = key;
-  return resp;
 }
 
 
 // retrieves value of key, with timestamp as an optional parameter
-function read(key, timestamp) {
+function read(pool, key, timestamp, callback) {
   if (getInputsInvalid(key, timestamp)) {
-    return invalidGetMessage;
-  }
-
-  if (key in kvStore) {
-    records = kvStore[key];
-
+    callback(invalidGetMessage);
+  } else {
+    // if timestamp is undefined or null, set it to a future time to guarantee that the latest record will be retrieved
     if (check.maybe(timestamp) == true) {
-      // get the latest record
-      record = records.pop();
-      return {'value': record['value']};
-    } else {
-      if (timestamp < records[0]['timestamp']) {
-        return notFoundGetMessage;
-      }
-      for (let i = 1; i < records.length; ++i) {
-        if (timestamp < records[i]['timestamp']) {
-          return {'value': records[i-1]['value']};
+      timestamp = Date.now(0) + 500000;
+    };
+    timestamp = timestamp / 1000;
+
+    pool.query(sqlCommands.getLatestFromKvTable, [key, timestamp], (err, res) => {
+      if (err) {
+        console.log(err.stack);
+      } else {
+        record = res.rows[0]
+        // return error message if no results found
+        if (check.maybe(record) == true){
+          callback(notFoundGetMessage);
+        } else {
+          record['value'] = tryParseJson(record['value']);
+          callback(record);
         }
       }
-      if (records[records.length-1]['timestamp'] <= timestamp) {
-        return {'value': records[records.length-1]['value']};
-      }
-    }
+    });
   }
 
-  return notFoundGetMessage;
 }
 
 
 // resets all information in the database
-function reset() {
-  kvStore = {};
+function reset(pool, callback) {
+  pool.query(sqlCommands.deleteKvRows, (err, res) => {
+    if (err) {
+      console.log(err.stack);
+    }
+    callback();
+  });
 }
 
 
