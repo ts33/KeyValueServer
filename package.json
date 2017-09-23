@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "test": "node_modules/.bin/mocha -u tdd ./test/*_test.js"
+    "test": "node_modules/.bin/mocha -u tdd ./test/*_test.js",
+    "istanbul": "node_modules/.bin/istanbul cover _mocha -- -R spec"
   },
   "repository": {
     "type": "git",
@@ -21,13 +22,16 @@
   },
   "homepage": "https://github.com/ts33/KeyValueServer#readme",
   "dependencies": {
+    "body-parser": "1.18.2",
     "check-types": "7.3.0",
-    "express": "4.15.4"
+    "express": "4.15.4",
+    "request": "2.82.0"
   },
   "devDependencies": {
     "chai": "4.1.2",
     "eslint": "4.7.2",
     "mocha": "3.5.3",
+    "istanbul": "0.4.5",
     "sleep": "5.1.1"
   }
 }
