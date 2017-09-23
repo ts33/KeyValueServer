@@ -2,7 +2,7 @@ const express = require('express')
 const bodyParser = require('body-parser')
 var store = require('./store.js')
 
-const port = 3000
+const port = process.env.PORT || 3000
 const app = express()
 // parse application/json
 app.use(bodyParser.json())
