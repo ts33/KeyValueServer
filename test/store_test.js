@@ -1,72 +1,119 @@
+let async = require('async');
 let sleep = require('sleep');
 let chai = require('chai');
 let assert = chai.assert;
 let store = require('../store.js');
+const {Pool} = require('pg');
+let dbHelper = require('../db_helper.js');
+
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: true,
+});
+
+pool.query(dbHelper.createKvTable, (err, res) => {
+  if (err) {
+    console.log(err.stack);
+  }
+});
 
 
 suite('Save', function() {
   suite('Valid inputs', function() {
-    setup(function() {
-      store.reset();
+    setup(function(done) {
+      store.reset(pool, done);
     });
 
-    test('should accept and return string `value`', function() {
+    test('should accept and return string `value`', function(done) {
       key = 'a_bc';
       value = 'some_value';
       ts = Date.now();
-      result = store.save(key, value);
-      diff = result['timestamp'] - ts;
-
-      assert.equal(result['key'], key);
-      assert.equal(result['value'], value);
-      assert.isBelow(diff, 5);
+      store.save(pool, key, value, function(err, result) {
+        diff = result['timestamp'] - ts;
+        assert.equal(result['key'], key);
+        assert.equal(result['value'], value);
+        assert.isBelow(diff, 5);
+        done();
+      });
     });
 
-    test('should accept and return JSON `value`', function() {
+    test('should accept and return JSON `value`', function(done) {
       key = 'abc';
       value = {'inner_key': 'def', 'inner_value': 123};
       ts = Date.now();
-      result = store.save(key, value);
-      diff = result['timestamp'] - ts;
-
-      assert.equal(result['key'], key);
-      assert.deepEqual(result['value'], value);
-      assert.isBelow(diff, 5);
+      store.save(pool, key, value, function(err, result) {
+        diff = result['timestamp'] - ts;
+        assert.equal(result['key'], key);
+        assert.deepEqual(result['value'], value);
+        assert.isBelow(diff, 5);
+        done();
+      });
     });
   });
 
   suite('Invalid inputs', function() {
-    setup(function() {
-      store.reset();
+    setup(function(done) {
+      store.reset(pool, done);
     });
 
-    test('should return error if key is empty string', function() {
+    test('should return error if key is empty string', function(done) {
       key = '';
       value = 'some_value';
       expected = store.invalidSaveMessage;
-      assert.deepEqual(store.save(key, value), expected);
+      store.save(pool, key, value, function(err, result) {
+        assert.deepEqual(result, expected);
+        done();
+      });
     });
 
-    test('should return error if value is not string/JSON', function() {
+    test('should return error if value is not string/JSON', function(done) {
       key = 'abc';
       value = 123;
       expected = store.invalidSaveMessage;
-      assert.deepEqual(store.save(key, value), expected);
+      store.save(pool, key, value, function(err, result) {
+        assert.deepEqual(result, expected);
+        done();
+      });
     });
 
-    test('should return error if key is not string', function() {
+    test('should return error if key is not string', function(done) {
       key = 123;
       value = 'some_value';
       expected = store.invalidSaveMessage;
-      assert.deepEqual(store.save(key, value), expected);
+      store.save(pool, key, value, function(err, result) {
+        assert.deepEqual(result, expected);
+        done();
+      });
     });
 
-    test('should return error if key has characters that are not alphanumeric or _', function() {
+    test('should return error if key has characters that are not alphanumeric or _', function(done) {
       value = 'some_value';
       expected = store.invalidSaveMessage;
-      assert.deepEqual(store.save('ab-', value), expected);
-      assert.deepEqual(store.save('ab.', value), expected);
-      assert.deepEqual(store.save('ab@', value), expected);
+
+      async.waterfall([
+        function(callback) {
+          store.save(pool, 'ab-', value, callback);
+        },
+        function(result, callback) {
+          assert.deepEqual(result, expected);
+          callback();
+        },
+        function(callback) {
+          store.save(pool, 'ab.', value, callback);
+        },
+        function(result, callback) {
+          assert.deepEqual(result, expected);
+          callback();
+        },
+        function(callback) {
+          store.save(pool, 'ab@', value, callback);
+        },
+        function(result, callback) {
+          assert.deepEqual(result, expected);
+          done();
+        },
+      ]);
     });
   });
 });
@@ -74,147 +121,253 @@ suite('Save', function() {
 
 suite('Read', function() {
   suite('Valid inputs', function() {
-    setup(function() {
-      store.reset();
+    setup(function(done) {
+      store.reset(pool, done);
     });
 
-    test('should accept string `key` and return string `value`', function() {
+    test('should accept string `key` and return string `value`', function(done) {
       key = 'abc';
       value = 'some_value';
-      store.save(key, value);
-
       expected = {'value': value};
-      assert.deepEqual(store.read(key, null), expected);
+
+      store.save(pool, key, value, function(err, result) {
+        store.read(pool, key, null, function(err, result) {
+          assert.deepEqual(result, expected);
+          done();
+        });
+      });
     });
 
-    test('should accept string `key` and return JSON `value`', function() {
+    test('should accept string `key` and return JSON `value`', function(done) {
       key = 'abc';
       value = {'inner_key': 'def', 'inner_value': 123};
-      store.save(key, value);
-
       expected = {'value': value};
-      assert.deepEqual(store.read(key, null), expected);
+
+      store.save(pool, key, value, function(err, result) {
+        store.read(pool, key, null, function(err, result) {
+          assert.deepEqual(result, expected);
+          done();
+        });
+      });
     });
   });
 
   suite('Invalid inputs', function() {
-    setup(function() {
-      store.reset();
+    setup(function(done) {
+      store.reset(pool, done);
     });
 
-    test('should return error if key is not string', function() {
+    test('should return error if key is not string', function(done) {
       key = 'abc';
       value = 'some_value';
-      store.save(key, value);
-
       expected = store.invalidGetMessage;
-      assert.deepEqual(store.read(123), expected);
+
+      store.save(pool, key, value, function(err, result) {
+        store.read(pool, 123, null, function(err, result) {
+          assert.deepEqual(result, expected);
+          done();
+        });
+      });
     });
 
-    test('should return error if key has characters that are not alphanumeric or _', function() {
+    test('should return error if key has characters that are not alphanumeric or _', function(done) {
       key = 'abc';
       value = 'some_value';
-      store.save(key, value);
-
       expected = store.invalidGetMessage;
-      assert.deepEqual(store.read('ab-'), expected);
-      assert.deepEqual(store.read('ab.'), expected);
-      assert.deepEqual(store.read('ab@'), expected);
+
+      async.waterfall([
+        function(callback) {
+          store.save(pool, key, value, callback);
+        },
+        function(result, callback) {
+          store.read(pool, 'ab-', null, callback);
+        },
+        function(result, callback) {
+          assert.deepEqual(result, expected);
+          callback();
+        },
+        function(callback) {
+          store.read(pool, 'ab.', null, callback);
+        },
+        function(result, callback) {
+          assert.deepEqual(result, expected);
+          callback();
+        },
+        function(callback) {
+          store.read(pool, 'ab@', null, callback);
+        },
+        function(result, callback) {
+          assert.deepEqual(result, expected);
+          done();
+        },
+      ]);
     });
 
-    test('should return error if timestamp is not int', function() {
+    test('should return error if timestamp is not int', function(done) {
       key = 'abc';
       value = 'some_value';
-      store.save(key, value);
-
       expected = store.invalidGetMessage;
-      assert.deepEqual(store.read(key, 'timestamp'), expected);
+
+      store.save(pool, key, value, function(err, result) {
+        store.read(pool, key, 'timestamp', function(err, result) {
+          assert.deepEqual(result, expected);
+          done();
+        });
+      });
     });
 
-    test('should return error if timestamp is negative or zero', function() {
+    test('should return error if timestamp is negative or zero', function(done) {
       key = 'abc';
       value = 'some_value';
-      store.save(key, value);
-
       expected = store.invalidGetMessage;
-      assert.deepEqual(store.read(key, -100), expected);
-      assert.deepEqual(store.read(key, 0), expected);
+
+      async.waterfall([
+        function(callback) {
+          store.save(pool, key, value, callback);
+        },
+        function(result, callback) {
+          store.read(pool, -100, null, callback);
+        },
+        function(result, callback) {
+          assert.deepEqual(result, expected);
+          callback();
+        },
+        function(callback) {
+          store.read(pool, 0, null, callback);
+        },
+        function(result, callback) {
+          assert.deepEqual(result, expected);
+          done();
+        },
+      ]);
     });
   });
 });
 
 
 suite('Reset', function() {
-  test('should empty all records', function() {
+  test('should empty all records', function(done) {
     key = 'abc';
     value = 'some_value';
-    store.save(key, value);
-    store.reset();
 
-    assert.deepEqual(store.read(key, null), store.notFoundGetMessage);
+    async.waterfall([
+      function(callback) {
+        store.save(pool, key, value, callback);
+      },
+      function(result, callback) {
+        store.reset(pool, callback);
+      },
+      function(callback) {
+        store.read(pool, key, null, callback);
+      },
+      function(result, callback) {
+        assert.deepEqual(result, store.notFoundGetMessage);
+        done();
+      },
+    ]);
   });
 });
 
 
 suite('Advanced Read', function() {
-  setup(function() {
-    store.reset();
+  setup(function(done) {
+    store.reset(pool, done);
   });
 
-  test('should return correct value', function() {
+  test('should return correct value', function(done) {
     key = 'abc';
     value = 'some_value';
-    store.save(key, value);
-
     key2 = 'def';
     value2 = 'another_value';
-    store.save(key2, value2);
-
     expected = {'value': value};
-    assert.deepEqual(store.read(key, null), expected);
+
+    async.waterfall([
+      function(callback) {
+        store.save(pool, key, value, callback);
+      },
+      function(result, callback) {
+        store.save(pool, key2, value2, callback);
+      },
+      function(result, callback) {
+        store.read(pool, key, null, callback);
+      },
+      function(result, callback) {
+        assert.deepEqual(result, expected);
+        done();
+      },
+    ]);
   });
 
-  test('should return updated value', function() {
+  test('should return updated value', function(done) {
     key = 'abc';
     value = 'some_value';
-    store.save(key, value);
-
     value2 = 'another_value';
-    store.save(key, value2);
-
     expected = {'value': value2};
-    assert.deepEqual(store.read(key, null), expected);
+
+    async.waterfall([
+      function(callback) {
+        store.save(pool, key, value, callback);
+      },
+      function(result, callback) {
+        store.save(pool, key, value2, callback);
+      },
+      function(result, callback) {
+        store.read(pool, key, null, callback);
+      },
+      function(result, callback) {
+        assert.deepEqual(result, expected);
+        done();
+      },
+    ]);
   });
 
-  test('should return values according to timestamp', function() {
+  test('should return values according to timestamp', function(done) {
     key = 'abc';
     value = 'first_value';
-    store.save(key, value);
-    firstSave = Date.now();
-
-    sleep.sleep(1);
     value1 = 'second_value';
-    store.save(key, value1);
-    secondSave = Date.now();
-
-    sleep.sleep(1);
     value2 = 'third_value';
-    store.save(key, value2);
-    thirdSave = Date.now();
-
-    // when specifying with a timestamp before the first call, a null value is returned
-    assert.deepEqual(store.read(key, firstSave-500), store.notFoundGetMessage);
-
     expected = {'value': value};
-    // when specifying with a timestamp between the first two calls, the first result is returned
-    assert.deepEqual(store.read(key, firstSave+500), expected);
+    expected1 = {'value': value1};
+    expected2 = {'value': value2};
 
-    expected = {'value': value1};
-    // when specifying with a timestamp between 2nd and 3rd call, the second result is returned
-    assert.deepEqual(store.read(key, secondSave+500), expected);
-
-    expected = {'value': value2};
-    // when specifying with a timestamp after the third call, the second result is returned
-    assert.deepEqual(store.read(key, thirdSave+500), expected);
+    async.waterfall([
+      function(callback) {
+        store.save(pool, key, value, callback);
+      },
+      function(result, callback) {
+        firstSave = Date.now();
+        sleep.sleep(1);
+        store.save(pool, key, value1, callback);
+      },
+      function(result, callback) {
+        secondSave = Date.now();
+        sleep.sleep(1);
+        store.save(pool, key, value2, callback);
+      },
+      function(result, callback) {
+        thirdSave = Date.now();
+        // when specifying with a timestamp before the first call, a null value is returned
+        store.read(pool, key, firstSave-500, callback);
+      },
+      function(result, callback) {
+        assert.deepEqual(result, store.notFoundGetMessage);
+        // when specifying with a timestamp between the first two calls, the first result is returned
+        store.read(pool, key, firstSave+500, callback);
+      },
+      function(result, callback) {
+        assert.deepEqual(result, expected);
+        // when specifying with a timestamp between 2nd and 3rd call, the second result is returned
+        store.read(pool, key, secondSave+500, callback);
+      },
+      function(result, callback) {
+        assert.deepEqual(result, expected1);
+        // when specifying with a timestamp after the third call, the second result is returned
+        store.read(pool, key, thirdSave+500, callback);
+      },
+      function(result, callback) {
+        assert.deepEqual(result, expected2);
+        done();
+      },
+    ]);
   });
 });

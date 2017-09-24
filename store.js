@@ -1,5 +1,5 @@
 let check = require('check-types');
-let sqlCommands = require('./sql_commands.js');
+let dbHelper = require('./db_helper.js');
 
 
 invalidSaveMessage = {'error': 'input is invalid, please enter only a `key` of type String (alphanumeric and _ only) and a `value` of type String/JSON'};
@@ -62,20 +62,15 @@ function getInputsInvalid(key, timestamp) {
 // saves key value information with timestamp as a form of version control
 function save(pool, key, value, callback) {
   if (saveInputsInvalid(key, value)) {
-    callback(invalidSaveMessage);
+    callback(null, invalidSaveMessage);
   } else {
     if (check.object(value)) {
       value = JSON.stringify(value);
     }
-    pool.query(sqlCommands.addKvRow, [key, value], (err, res) => {
-      if (err) {
-        console.log(err.stack);
-      } else {
-        record = res.rows[0];
-        record['timestamp'] = record['timestamp'] * 1000;
-        record['value'] = tryParseJson(record['value']);
-        callback(record);
-      }
+    dbHelper.pgQuery(pool, dbHelper.addKvRow, [key, value], function(record) {
+      record['timestamp'] = dbHelper.secondsToMilliseconds(record['timestamp']);
+      record['value'] = tryParseJson(record['value']);
+      callback(null, record);
     });
   }
 }
@@ -84,26 +79,21 @@ function save(pool, key, value, callback) {
 // retrieves value of key, with timestamp as an optional parameter
 function read(pool, key, timestamp, callback) {
   if (getInputsInvalid(key, timestamp)) {
-    callback(invalidGetMessage);
+    callback(null, invalidGetMessage);
   } else {
     // if timestamp is undefined or null, set it to a future time to guarantee that the latest record will be retrieved
     if (check.maybe(timestamp) == true) {
       timestamp = Date.now(0) + 500000;
     };
-    timestamp = timestamp / 1000;
+    timestamp = dbHelper.millisecondsToSeconds(timestamp);
 
-    pool.query(sqlCommands.getLatestFromKvTable, [key, timestamp], (err, res) => {
-      if (err) {
-        console.log(err.stack);
+    dbHelper.pgQuery(pool, dbHelper.getLatestFromKvTable, [key, timestamp], function(record) {
+      // return error message if no results found
+      if (check.maybe(record) == true) {
+        callback(null, notFoundGetMessage);
       } else {
-        record = res.rows[0];
-        // return error message if no results found
-        if (check.maybe(record) == true) {
-          callback(notFoundGetMessage);
-        } else {
-          record['value'] = tryParseJson(record['value']);
-          callback(record);
-        }
+        record['value'] = tryParseJson(record['value']);
+        callback(null, record);
       }
     });
   }
@@ -112,11 +102,8 @@ function read(pool, key, timestamp, callback) {
 
 // resets all information in the database
 function reset(pool, callback) {
-  pool.query(sqlCommands.deleteKvRows, (err, res) => {
-    if (err) {
-      console.log(err.stack);
-    }
-    callback();
+  dbHelper.pgQuery(pool, dbHelper.deleteKvRows, null, function(res) {
+    callback(null);
   });
 }
 

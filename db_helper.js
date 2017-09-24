@@ -1,4 +1,24 @@
 
+function pgQuery(pool, command, values, callback) {
+  pool.query(command, values, (err, res) => {
+    if (err) {
+      console.log(err.stack);
+    }
+    callback(res.rows[0]);
+  });
+}
+
+
+function millisecondsToSeconds(milli) {
+  return milli / 1000;
+}
+
+
+function secondsToMilliseconds(sec) {
+  return sec * 1000;
+}
+
+
 let createKvTable = 'CREATE TABLE IF NOT EXISTS key_value ('+
   'key varchar(25) NOT NULL,'+
   'value varchar(100),'+
@@ -24,3 +44,9 @@ module.exports.deleteKvRows = deleteKvRows;
 module.exports.getLatestFromKvTable = getLatestFromKvTable;
 
 module.exports.addKvRow = addKvRow;
+
+module.exports.pgQuery = pgQuery;
+
+module.exports.millisecondsToSeconds = millisecondsToSeconds;
+
+module.exports.secondsToMilliseconds = secondsToMilliseconds;

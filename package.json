@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/ts33/KeyValueServer#readme",
   "dependencies": {
+    "async": "2.5.0",
     "body-parser": "1.18.2",
     "check-types": "7.3.0",
     "express": "4.15.4",
