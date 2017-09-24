@@ -1,48 +1,30 @@
 const express = require('express');
-let check = require('check-types');
 const bodyParser = require('body-parser');
-const {Pool} = require('pg');
 let store = require('./store.js');
 let dbHelper = require('./db_helper.js');
 
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: true,
-});
-
-pool.query(dbHelper.createKvTable, (err, res) => {
-  if (err) {
-    console.log(err.stack);
-  }
-});
-
+const pool = dbHelper.connectDb();
 const port = process.env.PORT || 3000;
 const app = express();
-// parse application/json
 app.use(bodyParser.json());
 
 
 function sendJsonResponse(res, result) {
-  res.setHeader('Content-Type', 'application/json');
-
   if ('error' in result) {
     res.statusCode = 400;
-    res.send(JSON.stringify(result));
   } else {
     res.statusCode = 200;
-    res.send(JSON.stringify(result));
   }
+
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify(result));
 }
 
 
 app.get('/object/:key', function(req, res) {
   console.log(`Received a GET request on key ${req.params.key}`);
-  timestamp = null;
-  if (check.maybe(req.query.timestamp) != true) {
-    timestamp = parseInt(req.query.timestamp, 10);
-  }
-  store.read(pool, req.params.key, timestamp, function(err, result) {
+  store.read(pool, req.params.key, req.query.timestamp, function(err, result) {
     sendJsonResponse(res, result);
   });
 });
@@ -64,6 +46,9 @@ app.get('/reset', function(req, res) {
 });
 
 
-app.listen(port, function() {
-  console.log('Example app listening on port 3000!');
+// start the app after the db has finished setting up
+dbHelper.setupDb(pool, function() {
+  app.listen(port, function() {
+    console.log('App listening on port 3000!');
+  });
 });

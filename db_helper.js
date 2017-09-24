@@ -1,3 +1,20 @@
+const {Pool} = require('pg');
+
+
+function connectDb() {
+   return new Pool({
+     connectionString: process.env.DATABASE_URL,
+     ssl: true,
+   });
+}
+
+
+function setupDb(pool, callback) {
+  pgQuery(pool, createKvTable, null, function(record) {
+    callback();
+  });
+}
+
 
 function pgQuery(pool, command, values, callback) {
   pool.query(command, values, (err, res) => {
@@ -50,3 +67,7 @@ module.exports.pgQuery = pgQuery;
 module.exports.millisecondsToSeconds = millisecondsToSeconds;
 
 module.exports.secondsToMilliseconds = secondsToMilliseconds;
+
+module.exports.connectDb = connectDb;
+
+module.exports.setupDb = setupDb;

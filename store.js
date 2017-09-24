@@ -8,6 +8,7 @@ invalidGetMessage = {'error': 'input is invalid, please enter only a `key` of ty
 
 notFoundGetMessage = {'error': 'no records found. Either this key does not have any records, no records existed with this timestamp'};
 
+keyValidRegex = /^[A-Za-z0-9_]+$/;
 
 // https://stackoverflow.com/questions/3710204/how-to-check-if-a-string-is-a-valid-json-string-in-javascript-without-using-try
 function tryParseJson(possibleJsonString) {
@@ -29,7 +30,7 @@ function tryParseJson(possibleJsonString) {
 
 function saveInputsValid(key, value) {
   // only allow alphanumeric characters and underscore to be used in key
-  if (check.match(key, /^[A-Za-z0-9_]+$/) &&
+  if (check.match(key, keyValidRegex) &&
     (check.object(value) || check.string(value))) {
     return true;
   } else {
@@ -45,8 +46,11 @@ function saveInputsInvalid(key, value) {
 
 function getInputsValid(key, timestamp) {
   // only allow alphanumeric characters and underscore to be used in key
-  if (check.match(key, /^[A-Za-z0-9_]+$/) &&
-    (check.maybe(timestamp) == true || check.positive(timestamp))) {
+  if (check.match(key, keyValidRegex) && (
+    check.maybe(timestamp) == true ||
+    check.positive(timestamp) ||
+    check.positive(parseInt(timestamp, 10))
+  )) {
     return true;
   } else {
     return false;
